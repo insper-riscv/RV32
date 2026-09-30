@@ -31,7 +31,9 @@ STD  := --std=08
 WDIR := build/ghdl
 
 # 1) Coleta todos .vhd/.vhdl
-CHECK_SRCS_ALL := $(shell find src -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
+# The core's VHDL lives in the Core submodule; src/ keeps the memories, the
+# peripherals and the simulation top.
+CHECK_SRCS_ALL := $(shell find src Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
 
 # 2) EXCLUI vendors/IPs e arquivos que usam bibliotecas Intel (lpm, altera)
 EXCLUDE_GLOB := \
@@ -41,15 +43,12 @@ EXCLUDE_GLOB := \
   src/%/ip/% \
   src/%/quartus_ip/% \
   src/**/ip/% \
-  src/**/quartus_ip/% \
-  src/RV32M.vhd \
-  src/mhu.vhd \
-  src/rv32im_pipeline_fpga_top.vhd
+  src/**/quartus_ip/%
 
 CHECK_SRCS := $(filter-out $(EXCLUDE_GLOB),$(CHECK_SRCS_ALL))
 
 # 3) Ordena automaticamente por dependencias (topological sort)
-ORDERED_SRCS := $(shell python3 tools/vhdl_topo_sort.py $(CHECK_SRCS))
+ORDERED_SRCS := $(shell uv run --project Tests riscv-tools vhdl-sort $(CHECK_SRCS))
 
 .PHONY: print-check check
 print-check:

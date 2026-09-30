@@ -99,51 +99,19 @@ The `multdiv.vhd` module implements all eight M-extension operations (MUL, MULH,
 
 ```
 .
-├── src/                   # All VHDL source modules
-│   ├── rv32im_pipeline_core.vhd       # Top-level pipeline core
-│   ├── rv32im_pipeline_types.vhd      # Shared type definitions
-│   ├── rv32i_ctrl_consts.vhd          # Control constants
-│   ├── pc_fetch.vhd                   # IF stage
-│   ├── reg_IF_ID.vhd                  # IF/ID pipeline register
-│   ├── control_unit.vhd               # ID: instruction decoder + control
-│   ├── RegFile.vhd                    # Register file (32×32-bit)
-│   ├── ExtenderImm.vhd                # Immediate sign-extension
-│   ├── bubble_mux.vhd                 # NOP injection for load-use stall
-│   ├── hazard_detection_unit.vhd      # Load-use & muldiv stall detection
-│   ├── reg_ID_EX.vhd                  # ID/EX pipeline register
-│   ├── ALU.vhd                        # Arithmetic/logic unit
-│   ├── multdiv.vhd                    # M-extension: Booth mul + non-restoring div (sequential, stall)
-│   ├── forwarding_unit.vhd            # RAW forwarding logic
-│   ├── StoreManager.vhd               # Byte-enable mask for stores
-│   ├── reg_EX_MEM.vhd                 # EX/MEM pipeline register
-│   ├── ExtenderRAM.vhd                # Load sign/zero extension (WB)
-│   └── reg_MEM_WB.vhd                 # MEM/WB pipeline register
-│
-├── docs/
-│   ├── img/                           # Architecture diagrams
-│   ├── PIPELINE_ARCHITECTURE_GUIDE.md # Detailed architecture reference
-│   └── RV32IM_PIPELINE_PASSO0_CONTRATO.md  # Signal contract between stages
-│
-└── tests/
-    ├── FPGA/                          # Quartus projects for module-level FPGA testing
-    └── python/                        # Cocotb testbenches (GHDL simulation)
-        ├── unittests/
-        │   ├── entities/              # Unit tests: ALU, RegFile, HDU, FWU, BubbleMux, …
-        │   └── instructions/          # Integration tests: one–six (RV32I), mul (RV32M)
-        ├── runner.py                  # Orchestrates compilation and simulation
-        └── tests.json                 # Test catalog (toplevel + source list per test)
+├── Core/                  # Submodule: the pipeline core in VHDL, by ISA extension
+│                          #   (common/, I/, M/, cores/rv32im_pipeline_core.vhd), its per-entity tests
+├── Tests/                 # Submodule: test programs, goldens, simulation/board flows (riscv-tools)
+├── src/                   # What has not moved yet: memories (RAM/ROM IPs and simulation models),
+│                          #   GPIO, TIMER, PLL, Blinky, the simulation top
+├── tests/FPGA/core/       # The Quartus project of the board and the PLL simulation model
+├── scripts/, kpi_*.json   # KPI reports
+├── paths.yaml             # every file path the configuration lists (riscv-tools check-paths)
+└── L2IP/                  # Deprecated SoC top (kept as reference; tag archive/l2ip)
 ```
 
-### Key source files
-
-| File | Purpose |
-|------|---------|
-| `rv32im_pipeline_core.vhd` | Instantiates all stages; wires hazard, forwarding, branch and WB signals |
-| `hazard_detection_unit.vhd` | Detects load-use hazard; drives PC/IF-ID freeze and bubble injection |
-| `forwarding_unit.vhd` | Detects RAW hazards; drives `forward_A`/`forward_B` mux selectors |
-| `bubble_mux.vhd` | Zeroes side-effect control signals when a NOP bubble is needed |
-| `multdiv.vhd` | Sequential multiply/divide (Booth + non-restoring); stall via `muldiv_busy`; result selected in EX by `isMulDiv` |
-| `control_unit.vhd` | Decodes opcode and generates all datapath control signals |
+The core moved to [insper-riscv/Core](https://github.com/insper-riscv/Core) with its
+history; the state before the move is the tag `pre-refactor`.
 
 ---
 
@@ -194,10 +162,10 @@ gtkwave Tests/tests/python/sim_build/<toplevel>/waves.ghw
 The design targets the **Cyclone V (5CEBA4F23C7)** on the **DE0-CV** board. Open the Quartus project, compile, and program:
 
 ```
-src/rv32im_pipeline_fpga.qpf   ← Quartus project
+tests/FPGA/core/quartus/core_fpga_test.qpf   ← Quartus project
 ```
 
-The FPGA top-level wrapper instantiates `rv32im_pipeline_core` alongside the ROM and RAM Quartus IPs and connects the clock, reset, and debug LEDs.
+The top-level (`core_fpga_test.vhd`) instantiates `rv32im_pipeline_core` alongside the boot ROM, FLASH and RAM Quartus IPs and the PLL.
 
 ---
 

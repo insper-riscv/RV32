@@ -1,4 +1,0 @@
-QUARTUS_VERSION = "25.1"
-DATE = "04/29/2026"
-
-PROJECT_REVISION = "rv32im_pipeline_fpga"
