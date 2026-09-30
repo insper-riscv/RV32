@@ -4,3 +4,6 @@
 [submodule "Core"]
 	path = Core
 	url = https://github.com/insper-riscv/Core.git
+[submodule "Memory"]
+	path = Memory
+	url = https://github.com/insper-riscv/Memory.git

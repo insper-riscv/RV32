@@ -31,15 +31,12 @@ STD  := --std=08
 WDIR := build/ghdl
 
 # 1) Coleta todos .vhd/.vhdl
-# The core's VHDL lives in the Core submodule; src/ keeps the memories, the
-# peripherals and the simulation top.
-CHECK_SRCS_ALL := $(shell find src Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
+# The core's VHDL lives in the Core submodule and the simulation memories in
+# Memory; src/ keeps the peripherals, the PLL and the simulation top.
+CHECK_SRCS_ALL := $(shell find src Memory/sim Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
 
 # 2) EXCLUI vendors/IPs e arquivos que usam bibliotecas Intel (lpm, altera)
 EXCLUDE_GLOB := \
-  src/ROM1PORT/% \
-  src/RAM1PORT/% \
-  src/ROM_IP/% \
   src/%/ip/% \
   src/%/quartus_ip/% \
   src/**/ip/% \
