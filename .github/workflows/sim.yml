@@ -1,4 +1,6 @@
 name: sim
+# Integration CI of the parent: it pins Tests (and, through it, Tools), so it
+# runs the same checks Tests runs on itself, against the VHDL of THIS commit.
 on:
   pull_request:
   push:
@@ -11,33 +13,37 @@ concurrency:
 jobs:
   cocotb-ghdl:
     runs-on: ubuntu-26.04
-    permissions:
-      contents: read
-      packages: read
+    # insper-riscv/Infra's toolchain image: GHDL, the RISC-V GCC with picolibc,
+    # Spike and uv already on PATH.
+    container:
+      image: ghcr.io/insper-riscv/infra-toolchain:latest
+    defaults:
+      run:
+        working-directory: Tests
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v7
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pull dev image
-        run: |
-          docker pull ghcr.io/pedropcventura/riscv-dev_tools:dev
-      - name: Run tests
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/work" \
-            -w /work \
-            -u root \
-            ghcr.io/pedropcventura/riscv-dev_tools:dev \
-            make test
+          submodules: recursive
+          path: .
+      - name: Install Python dependencies
+        run: uv sync
+      - name: Generate rv32_test.h
+        run: uv run riscv-tools --config tools/riscv_build/config.yaml generate-header
+      - name: Check the memory map against every copy
+        # Here Tests sits at RV32IM/Tests, so ../src and ../tests (the core's
+        # VHDL and the Quartus IPs) exist and every check runs.
+        run: uv run riscv-tools --root . check-memory-map --platform platforms/internal-mem.yaml
+      - name: Build sim test ROM images
+        run: uv run riscv-tools --config tools/riscv_build/config.yaml compile --emit hex
+      - name: Run sim tests
+        run: uv run riscv-tools --config tools/riscv_build/config.yaml sim
+      - name: Run per-entity VHDL unit tests
+        run: uv run python tests/python/runner.py
       - name: Upload waveforms
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: failure()
+        uses: actions/upload-artifact@v7
         with:
           name: waveforms
-          path: "**/*.vcd"
+          path: "**/*.ghw"
           if-no-files-found: ignore
