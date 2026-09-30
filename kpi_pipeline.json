@@ -95,37 +95,6 @@
       "total_covered": 45,
       "total_supported": 45,
       "ratio": "45 / 45"
-    },
-    "kpi4_speedup": {
-      "benchmark": "tests/FPGA/core/asm_tests/full.S",
-      "instr_total": 419,
-      "instr_rv32i": 378,
-      "instr_rv32m": 41,
-      "baseline": {
-        "model": "multi-cycle 3 estágios (2025.2)",
-        "cpi": 3.0,
-        "note": "lpm_divide combinacional (USING_PIPELINE=0), busy='0'",
-        "cycles": 1257,
-        "freq_mhz": 19.0,
-        "time_us": 66.16
-      },
-      "pipeline": {
-        "model": "pipeline 5 estágios (2026.1)",
-        "cycles": 525,
-        "cpi_efetivo": 1.253,
-        "freq_mhz": 83.0,
-        "time_us": 6.33,
-        "stall_load_cycles": 2,
-        "stall_branch_cycles": 18,
-        "stall_m_cycles": 82,
-        "hazards_estimated": true
-      },
-      "speedup": {
-        "S": 10.459,
-        "improved": true,
-        "t_base_us": 66.16,
-        "t_new_us": 6.33
-      }
     }
   }
 }

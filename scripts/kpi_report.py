@@ -5,9 +5,6 @@ Insper / CTI Renato Archer — 2026.1
 
 Uso (da raiz do repo ~/RV32I):
   python3 scripts/kpi_report.py --output kpi_report.json
-
-  # Após implementar o pipeline:
-  python3 scripts/kpi_report.py --pipeline --output kpi_report.json
 """
 
 import argparse, json, re, sys
@@ -208,102 +205,6 @@ def count_instructions(testbench_dirs: list) -> dict:
 
 
 # ===========================================================================
-# KPI 4 — Speedup via análise estática do benchmark
-# ===========================================================================
-
-LOAD_INSTRS   = {"lb","lh","lw","lbu","lhu"}
-BRANCH_INSTRS = {"beq","bne","blt","bge","bltu","bgeu"}
-JUMP_INSTRS   = {"jal","jalr"}
-M_INSTRS      = {"mul","mulh","mulhsu","mulhu","div","divu","rem","remu"}
-
-def parse_asm(asm_path: Path) -> dict:
-    counts = {"total":0,"rv32i":0,"rv32m":0,"load":0,"branch":0,"jump":0}
-    instr_re = re.compile(r'^\s*(?:[a-zA-Z_]\w*\s*:\s*)?([a-zA-Z]\w*)')
-    for line in asm_path.read_text(errors="replace").splitlines():
-        s = line.strip()
-        if not s or s.startswith('#') or s.startswith('.'): continue
-        s = re.sub(r'^[a-zA-Z_]\w*\s*:\s*', '', s)
-        if not s or s.startswith('#') or s.startswith('.'): continue
-        m = instr_re.match(s)
-        if not m: continue
-        mn = m.group(1).lower()
-        counts["total"] += 1
-        if mn in M_INSTRS:      counts["rv32m"] += 1
-        else:                   counts["rv32i"] += 1
-        if mn in LOAD_INSTRS:   counts["load"]   += 1
-        elif mn in BRANCH_INSTRS: counts["branch"] += 1
-        elif mn in JUMP_INSTRS:   counts["jump"]   += 1
-    return counts
-
-
-def kpi4_speedup(asm_path: Path, freq_base: float, freq_new: float,
-                 pipeline: bool, cpi_m: float,
-                 load_use_hazards=None, branch_taken=None) -> dict:
-    if not asm_path.exists():
-        return {"error": f"Benchmark não encontrado: {asm_path}"}
-
-    c = parse_asm(asm_path)
-
-    # Baseline: multi-cycle 3 estágios — CPI fixo = 3 para todas as instruções
-    # (lpm_divide configurado sem pipeline, busy='0' fixo)
-    cycles_base = c["total"] * 3
-    t_base_us   = cycles_base / (freq_base * 1e6) * 1e6
-
-    result = {
-        "benchmark":   str(asm_path),
-        "instr_total": c["total"],
-        "instr_rv32i": c["rv32i"],
-        "instr_rv32m": c["rv32m"],
-        "baseline": {
-            "model":    "multi-cycle 3 estágios (2025.2)",
-            "cpi":      3.0,
-            "note":     "lpm_divide combinacional (USING_PIPELINE=0), busy='0'",
-            "cycles":   cycles_base,
-            "freq_mhz": freq_base,
-            "time_us":  round(t_base_us, 2),
-        },
-    }
-
-    if not pipeline:
-        result["speedup"] = {
-            "note": "Passe --pipeline após implementar o pipeline de 5 estágios"
-        }
-        return result
-
-    # Pipeline 5 estágios: CPI ideal=1 + penalidades
-    if load_use_hazards is None:
-        load_use_hazards = int(c["load"] * 0.30)
-    if branch_taken is None:
-        branch_taken = int((c["branch"] + c["jump"]) * 0.50)
-
-    stall_load   = load_use_hazards * 1
-    stall_branch = branch_taken * 2
-    stall_m      = c["rv32m"] * int(cpi_m - 1)
-    cycles_new   = c["total"] + 4 + stall_load + stall_branch + stall_m
-    t_new_us     = cycles_new / (freq_new * 1e6) * 1e6
-    speedup      = t_base_us / t_new_us
-
-    result["pipeline"] = {
-        "model":               "pipeline 5 estágios (2026.1)",
-        "cycles":              cycles_new,
-        "cpi_efetivo":         round(cycles_new / c["total"], 3),
-        "freq_mhz":            freq_new,
-        "time_us":             round(t_new_us, 2),
-        "stall_load_cycles":   stall_load,
-        "stall_branch_cycles": stall_branch,
-        "stall_m_cycles":      stall_m,
-        "hazards_estimated":   True,
-    }
-    result["speedup"] = {
-        "S": round(speedup, 3),
-        "improved": speedup > 1.0,
-        "t_base_us": round(t_base_us, 2),
-        "t_new_us":  round(t_new_us, 2),
-    }
-    return result
-
-
-# ===========================================================================
 # Relatório e CLI
 # ===========================================================================
 
@@ -333,10 +234,6 @@ def build_report(args) -> dict:
             else parse_cocotb_coverage(cocotb_log)
         )
     report["kpis"]["kpi3_instructions"]   = count_instructions(args.testbench_dirs)
-    report["kpis"]["kpi4_speedup"]        = kpi4_speedup(
-        Path(args.asm), args.freq_base, args.freq_new,
-        args.pipeline, args.cpi_m, args.load_use_hazards, args.branch_taken,
-    )
     return report
 
 
@@ -380,31 +277,6 @@ def print_summary(report: dict):
         print(f"  RV32I : {len(ins['rv32i_covered'])}/{ins['rv32i_total']} ({ins['rv32i_pct']}%)")
         print(f"  RV32M : {len(ins['rv32m_covered'])}/{ins['rv32m_total']} ({ins['rv32m_pct']}%)")
 
-    # KPI 4
-    spd = kpis.get("kpi4_speedup", {})
-    print(f"\n[KPI 4] Speedup")
-    if "error" in spd:
-        print(f"  N/A  ({spd['error']})")
-    elif "baseline" in spd:
-        b = spd["baseline"]
-        print(f"  Benchmark : {Path(spd['benchmark']).name}"
-              f"  ({spd['instr_total']} instr, {spd['instr_rv32m']} M-ext)")
-        print(f"  {div}")
-        print(f"  BASELINE  : {b['cycles']} ciclos @ {b['freq_mhz']} MHz"
-              f" = {b['time_us']} µs  (CPI={b['cpi']})")
-        s = spd.get("speedup", {})
-        if "S" in s:
-            p = spd["pipeline"]
-            flag = "✓ MELHORA" if s["improved"] else "✗ REGRESSÃO"
-            print(f"  PIPELINE  : {p['cycles']} ciclos @ {p['freq_mhz']} MHz"
-                  f" = {p['time_us']} µs  (CPI≈{p['cpi_efetivo']})")
-            print(f"  {div}")
-            print(f"  S = {b['time_us']} / {p['time_us']} = {s['S']}  {flag}")
-            if False and p.get("hazards_estimated"):
-                print(f"  (hazards estimados — use --load-use-hazards e --branch-taken para valor real)")
-        else:
-            print(f"  {s.get('note','')}")
-
     print(f"\n{sep}\n")
 
 
@@ -418,13 +290,6 @@ def main():
     p.add_argument("--fit-rpt",      default="output_files/core_fpga_test.fit.rpt")
     p.add_argument("--cocotb-log",   default="tests/component/multdiv/results.xml")
     p.add_argument("--testbench-dirs", nargs="+", default=["tests"])
-    p.add_argument("--asm",          default="tests/FPGA/core/asm_tests/full.S")
-    p.add_argument("--freq-base",    type=float, default=1.0,  help="Clock baseline (MHz)")
-    p.add_argument("--freq-new",     type=float, default=1.0,  help="Clock versão nova (MHz)")
-    p.add_argument("--pipeline",     action="store_true",      help="Calcula speedup com modelo pipeline")
-    p.add_argument("--cpi-m",        type=float, default=3.0,  help="CPI das instruções M no pipeline")
-    p.add_argument("--load-use-hazards", type=int, default=None)
-    p.add_argument("--branch-taken",     type=int, default=None)
     p.add_argument("--output",       default=None,             help="Salva JSON neste arquivo")
     p.add_argument("--json-only",    action="store_true")
     args = p.parse_args()
