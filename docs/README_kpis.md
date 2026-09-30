@@ -19,7 +19,6 @@ python3 scripts/compare_kpis.py \
 - **KPI 1** — Frequência do clock da CPU
 - **KPI 2** — Cobertura de testes cocotb (% de testes passando)
 - **KPI 3** — Instruções suportadas (RV32I e RV32M)
-- **KPI 4** — Ciclos e tempo de execução do benchmark `full.S`
 
 ## Arquivos
 

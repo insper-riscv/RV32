@@ -9,8 +9,6 @@ Uso:
     --quartus-dir  <repo_base>/tests/FPGA/core/quartus \\
     --cocotb-log   /dev/null \\
     --testbench-dirs <repo_base>/tests \\
-    --asm          <repo_base>/tests/FPGA/core/asm_tests/full.S \\
-    --freq-base    1.0 \\
     --output       docs/baseline_2025_2.json
 
   # 2. Gerar o JSON da versão atual:
@@ -121,55 +119,6 @@ def main():
         f"{len(b3.get('rv32m_covered',[]))}/{b3.get('rv32m_total','?')} ({b3.get('rv32m_pct','?')}%)",
         f"{len(c3.get('rv32m_covered',[]))}/{c3.get('rv32m_total','?')} ({c3.get('rv32m_pct','?')}%)",
         delta_str(b3.get("rv32m_pct"), c3.get("rv32m_pct"), "%", higher_is_better=True))
-
-    # ── KPI 4 ──────────────────────────────────────────────────────────────
-    print(f"\n  [KPI 4] Speedup / Desempenho")
-    b4 = bk.get("kpi4_speedup", {})
-    c4 = ck.get("kpi4_speedup", {})
-    bb = b4.get("baseline", {})
-    cb = c4.get("baseline", {})
-    row("Instruções no benchmark",
-        fmt(b4.get("instr_total"), "{} instr"),
-        fmt(c4.get("instr_total"), "{} instr"),
-        delta_str(b4.get("instr_total"), c4.get("instr_total"),
-                  " instr", higher_is_better=True))
-    row("CPI (baseline multi-cycle)",
-        fmt(bb.get("cpi"), "{:.1f}"),
-        fmt(cb.get("cpi"), "{:.1f}"),
-        "")
-    row("Ciclos totais (baseline)",
-        fmt(bb.get("cycles"), "{} ciclos"),
-        fmt(cb.get("cycles"), "{} ciclos"),
-        delta_str(bb.get("cycles"), cb.get("cycles"), "", higher_is_better=False))
-    row("Tempo baseline @ freq",
-        f"{fmt(bb.get('time_us'), '{:.1f} µs')} @ {bb.get('freq_mhz','?')} MHz",
-        f"{fmt(cb.get('time_us'), '{:.1f} µs')} @ {cb.get('freq_mhz','?')} MHz",
-        "")
-
-    # Speedup do pipeline, se disponível
-    cs = c4.get("speedup", {})
-    cp = c4.get("pipeline", {})
-    if "S" in cs:
-        print(f"\n  [KPI 4 — Pipeline]")
-        row("CPI efetivo (pipeline)",
-            "N/A",
-            fmt(cp.get("cpi_efetivo"), "{:.3f}"),
-            "")
-        row("Ciclos totais (pipeline)",
-            "N/A",
-            fmt(cp.get("cycles"), "{} ciclos"),
-            "")
-        row("Tempo pipeline @ freq",
-            "N/A",
-            f"{fmt(cp.get('time_us'), '{:.1f} µs')} @ {cp.get('freq_mhz','?')} MHz",
-            "")
-        flag = "✓ MELHORA" if cs.get("improved") else "✗ REGRESSÃO"
-        print(f"\n  {'SPEEDUP S':<28} {'—':<{col_w}} {cs.get('S','?'):<{col_w}} {flag}")
-        if cp.get("hazards_estimated"):
-            print(f"\n  ⚠ Hazards estimados — use --load-use-hazards e --branch-taken para valor real")
-    else:
-        note = cs.get("note", "pipeline não implementado ainda")
-        print(f"\n  Speedup: {note}")
 
     print(f"\n{sep}\n")
 
