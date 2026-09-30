@@ -1,0 +1,20 @@
+# Every file path the tree's configuration references, checked by
+#   (cd Tests && uv run riscv-tools --root .. check-paths --manifest paths.yaml)
+# and by the sim workflow.
+#
+# Run it before and after moving any file: a moved VHDL file breaks each list
+# below that names it, and each list only breaks when something runs it.
+# Paths are relative to this repository's root.
+references:
+  # --- Tests: simulation and project paths ---------------------------------
+  - {name: Tests sim.vhdl_sources, file: Tests/tools/riscv_build/config.yaml, yaml: sim.vhdl_sources, base: Tests}
+  - {name: Tests quartus.project_dir, file: Tests/tools/riscv_build/config.yaml, yaml: quartus.project_dir, base: Tests}
+  - {name: Tests freq_sweep.pll_file, file: Tests/tools/riscv_build/config.yaml, yaml: freq_sweep.pll_file, base: Tests}
+  - {name: Tests hardware-top sim.vhdl_sources, file: Tests/tools/riscv_build/config.fpga-sim.yaml, yaml: sim.vhdl_sources, base: Tests}
+  - {name: Tests per-entity tests.json, file: Tests/tests/python/tests.json, yaml: "*.sources", base: Tests}
+
+  # --- Quartus projects -----------------------------------------------------
+  - {name: board project (core_fpga_test.qsf), file: tests/FPGA/core/quartus/core_fpga_test.qsf, pattern: '-name (?:VHDL_FILE|VERILOG_FILE|QIP_FILE|SDC_FILE) (\S+)'}
+
+  # --- Makefile and scripts --------------------------------------------------
+  - {name: Makefile and CI entry points, paths: [src, tools/vhdl_topo_sort.py, Tests/tests/python/runner.py, Tests/platforms/internal-mem.yaml, Tests/tools/riscv_build/config.yaml, scripts/kpi_report.py, scripts/compare_kpis.py]}
