@@ -34,6 +34,11 @@ jobs:
         # Here Tests sits at RV32IM/Tests, so ../src and ../tests (the core's
         # VHDL and the Quartus IPs) exist and every check runs.
         run: uv run riscv-tools --root . check-memory-map --platform platforms/internal-mem.yaml
+      - name: Check every referenced path exists
+        # paths.yaml lists each file the tree's configuration names (simulation
+        # sources, tests.json, the Quartus project). Also the safety net for
+        # moving files between repositories.
+        run: uv run riscv-tools --root .. check-paths --manifest paths.yaml
       - name: Build sim test ROM images
         run: uv run riscv-tools --config tools/riscv_build/config.yaml compile --emit hex
       - name: Run sim tests
