@@ -7,7 +7,7 @@ SHELL := /bin/bash
 # submodule (insper-riscv/RISC-V-Workstation-Tests), not here — run
 # `git submodule update --init --recursive` first if Tests/ is empty.
 test:
-	python3 Tests/tests/python/runner.py
+	cd Tests && uv run python tests/python/runner.py
 
 # Run a single test by name
 # Usage: make run TEST=<test_name>
@@ -15,7 +15,7 @@ run:
 ifndef TEST
 	$(error Usage: make run TEST=<test_name>)
 endif
-	python3 Tests/tests/python/runner.py $(TEST)
+	cd Tests && uv run python tests/python/runner.py $(TEST)
 
 # Remove generated waveforms
 clean:
