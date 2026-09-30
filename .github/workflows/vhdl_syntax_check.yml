@@ -6,36 +6,32 @@ on:
     paths:
       - "src/**/*.vhd"
       - "src/**/*.vhdl"
+      - "Core"
       - "Makefile"
       - ".github/workflows/vhdl_syntax_check.yml"
   pull_request:
     paths:
       - "src/**/*.vhd"
       - "src/**/*.vhdl"
+      - "Core"
       - "Makefile"
 
 jobs:
   ghdl-check:
     name: GHDL syntax check
     runs-on: ubuntu-26.04
-
-    # Run the job inside your GHCR image (has ghdl + yosys)
+    # insper-riscv/Infra's toolchain image: GHDL and uv on PATH.
     container:
-      image: ghcr.io/pedropcventura/riscv-dev_tools:yosys-fixed
-
-    # If the repo or image is private, this lets Actions pull from GHCR
-    permissions:
-      contents: read
-      packages: read
+      image: ghcr.io/insper-riscv/infra-toolchain:latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
-      - name: Show tool versions
-        run: |
-          ghdl --version || true
-          yosys -V || true
+      - name: Install Python dependencies (riscv-tools, from Tests/tools/Tools)
+        run: uv sync --project Tests
 
       - name: VHDL syntax check (Makefile target)
         run: make check
