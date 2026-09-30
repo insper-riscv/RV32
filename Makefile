@@ -36,7 +36,10 @@ WDIR := build/ghdl
 CHECK_SRCS_ALL := $(shell find src Memory/sim Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
 
 # 2) EXCLUI vendors/IPs e arquivos que usam bibliotecas Intel (lpm, altera)
+# src/GPIO/ROM_simulation.vhd is an old copy of the ROM_simulation entity (other
+# ports) and would replace Memory/sim's one in the work library; Phase 5 archives it.
 EXCLUDE_GLOB := \
+  src/GPIO/ROM_simulation.vhd \
   src/%/ip/% \
   src/%/quartus_ip/% \
   src/**/ip/% \
