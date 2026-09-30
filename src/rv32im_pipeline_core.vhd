@@ -222,6 +222,8 @@ architecture rtl of rv32im_pipeline_core is
   signal ex_selPCRS1        : std_logic;
   signal ex_opALU           : opalu_t;
   signal ex_isMulDiv        : std_logic;
+  signal mul_started_q      : std_logic := '0';  -- a instrucao M em EX ja recebeu seu start
+  signal mul_start_pulse    : std_logic;         -- start da unidade MulDiv, 1 ciclo por instrucao
   signal ex_startMul        : std_logic;
   signal ex_weRAM           : std_logic;
   signal ex_reRAM           : std_logic;
@@ -608,7 +610,37 @@ begin
 
   -- =========================================================================
   -- EX stage: MulDiv
+  --
+  -- O start da unidade eh um pulso de 1 ciclo por instrucao M, gerado aqui,
+  -- no primeiro ciclo em que a instrucao esta em EX. Ele nao volta a subir
+  -- enquanto a instrucao espera a unidade terminar (o pipeline fica parado:
+  -- muldiv_stall_n = '0') e so eh liberado de novo quando ela sai de EX.
+  --
+  -- Antes, o start vinha de ex_startMul, gerado em ID por startMul_raw
+  -- (cu_isMulDiv and not isMulDiv_d), ou seja, so na borda de subida de "a
+  -- instrucao em ID eh M". Com duas instrucoes M seguidas (div e rem de
+  -- n / 10 e n % 10, dois mul) a segunda tinha isMulDiv_d = '1', entrava em
+  -- EX sem start e devolvia o resultado da primeira. Tirar so a borda nao
+  -- resolve: ID/EX fica congelado durante a operacao com o start em '1', e a
+  -- unidade nao veria uma nova subida.
+  --
+  -- startMul_raw, isMulDiv_d e ex_startMul deixam de alimentar a unidade.
   -- =========================================================================
+  mul_start_pulse <= ex_isMulDiv and ex_valid and (not mul_started_q);
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '1' then
+        mul_started_q <= '0';
+      elsif muldiv_stall_n = '1' then
+        mul_started_q <= '0';
+      else
+        mul_started_q <= '1';
+      end if;
+    end if;
+  end process;
+
   u_muldiv : entity work.multdiv
     port map (
       SW     => (others => '0'),
@@ -619,7 +651,7 @@ begin
       LEDR   => open,
       saida  => ex_muldiv_result,
       rst    => reset,
-      start  => ex_startMul,
+      start  => mul_start_pulse,
       busy   => muldiv_busy,
       done   => muldiv_done
     );
