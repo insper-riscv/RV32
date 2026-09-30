@@ -85,10 +85,10 @@ set_global_assignment -name VHDL_FILE ../../../../Core/common/FlipFlop.vhd
 set_global_assignment -name VHDL_FILE ../../../../Core/I/ExtenderRAM.vhd
 set_global_assignment -name VHDL_FILE ../../../../Core/I/ExtenderImm.vhd
 set_global_assignment -name VHDL_FILE ../../../../src/Blinky.vhd
-set_global_assignment -name QIP_FILE ips/BOOT_ROM1PORT/boot_rom1port.qip
-set_global_assignment -name QIP_FILE ips/FLASH1PORT/flash1port.qip
-set_global_assignment -name QIP_FILE ips/RAM1PORT/ram1port.qip
-set_global_assignment -name QIP_FILE ips/FLASH_MEM1PORT/flash_mem1port.qip
+set_global_assignment -name QIP_FILE ../../../../Memory/ips/BOOT_ROM1PORT/boot_rom1port.qip
+set_global_assignment -name QIP_FILE ../../../../Memory/ips/FLASH1PORT/flash1port.qip
+set_global_assignment -name QIP_FILE ../../../../Memory/ips/RAM1PORT/ram1port.qip
+set_global_assignment -name QIP_FILE ../../../../Memory/ips/FLASH_MEM1PORT/flash_mem1port.qip
 set_global_assignment -name VHDL_FILE core_fpga_test.vhd
 
 #============================================================
