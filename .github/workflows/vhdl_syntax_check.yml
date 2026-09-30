@@ -17,7 +17,7 @@ on:
 jobs:
   ghdl-check:
     name: GHDL syntax check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     # Run the job inside your GHCR image (has ghdl + yosys)
     container:
