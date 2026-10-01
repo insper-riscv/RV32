@@ -31,18 +31,13 @@ STD  := --std=08
 WDIR := build/ghdl
 
 # 1) Coleta todos .vhd/.vhdl
-# The core's VHDL lives in the Core submodule, the simulation memories in Memory
-# and the peripherals in Peripherals; src/ keeps the PLL and the simulation top.
-CHECK_SRCS_ALL := $(shell find src Memory/sim Peripherals/common Peripherals/GPIO Peripherals/TIMER Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
+# The core's VHDL lives in the Core submodule, the simulation memories in Memory,
+# the peripherals in Peripherals and the simulation top in TopLevel.
+CHECK_SRCS_ALL := $(shell find TopLevel/platforms/internal-mem/rtl Memory/sim Peripherals/common Peripherals/GPIO Peripherals/TIMER Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
 
-# 2) EXCLUI vendors/IPs e arquivos que usam bibliotecas Intel (lpm, altera)
-EXCLUDE_GLOB := \
-  src/%/ip/% \
-  src/%/quartus_ip/% \
-  src/**/ip/% \
-  src/**/quartus_ip/%
-
-CHECK_SRCS := $(filter-out $(EXCLUDE_GLOB),$(CHECK_SRCS_ALL))
+# 2) Nothing to exclude: the Quartus IPs (Memory/ips, which need Intel libraries) and the
+# PLL are not in the list above.
+CHECK_SRCS := $(CHECK_SRCS_ALL)
 
 # 3) Ordena automaticamente por dependencias (topological sort)
 ORDERED_SRCS := $(shell uv run --project Tests riscv-tools vhdl-sort $(CHECK_SRCS))

@@ -21,9 +21,10 @@ def parse_pll_clock(quartus_dir) -> dict:
     search = Path(quartus_dir).resolve()
     pll_file = None
     for _ in range(6):
-        candidate = search / "src" / "PLL" / "pll_0002.v"
-        if candidate.exists():
-            pll_file = candidate
+        # the platform keeps the PLL next to the Quartus project (platforms/<p>/pll)
+        candidates = (search / "pll" / "pll_0002.v", search / "src" / "PLL" / "pll_0002.v")
+        pll_file = next((c for c in candidates if c.exists()), None)
+        if pll_file is not None:
             break
         search = search.parent
     if pll_file is None:
@@ -285,7 +286,7 @@ def main():
         description="KPI Report — Capstone RV32IM",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--quartus-dir",  default="tests/FPGA/core/quartus")
+    p.add_argument("--quartus-dir",  default="TopLevel/platforms/internal-mem/quartus")
     p.add_argument("--sta-rpt",      default="output_files/core_fpga_test.sta.rpt")
     p.add_argument("--fit-rpt",      default="output_files/core_fpga_test.fit.rpt")
     p.add_argument("--cocotb-log",   default="tests/component/multdiv/results.xml")

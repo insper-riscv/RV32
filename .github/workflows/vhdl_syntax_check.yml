@@ -4,16 +4,18 @@ name: VHDL Syntax Check
 on:
   push:
     paths:
-      - "src/**/*.vhd"
-      - "src/**/*.vhdl"
       - "Core"
+      - "Memory"
+      - "Peripherals"
+      - "TopLevel"
       - "Makefile"
       - ".github/workflows/vhdl_syntax_check.yml"
   pull_request:
     paths:
-      - "src/**/*.vhd"
-      - "src/**/*.vhdl"
       - "Core"
+      - "Memory"
+      - "Peripherals"
+      - "TopLevel"
       - "Makefile"
 
 jobs:

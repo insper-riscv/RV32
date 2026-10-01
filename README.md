@@ -101,17 +101,20 @@ The `multdiv.vhd` module implements all eight M-extension operations (MUL, MULH,
 .
 ├── Core/                  # Submodule: the pipeline core in VHDL, by ISA extension
 │                          #   (common/, I/, M/, cores/rv32im_pipeline_core.vhd), its per-entity tests
-├── Tests/                 # Submodule: test programs, goldens, simulation/board flows (riscv-tools)
 ├── Memory/                # Submodule: simulation models (sim/) and the board's Quartus IPs (ips/)
 ├── Peripherals/           # Submodule: GPIO and TIMER (UART later), with their entity tests
-├── src/                   # What has not moved yet: PLL, Blinky, the simulation top
-├── tests/FPGA/core/       # The Quartus project of the board and the PLL simulation model
+├── TopLevel/              # Submodule: the platform: Quartus project, PLL, simulation top, runtime,
+│                          #   memory map, testbench, docs (platforms/internal-mem/)
+├── Tests/                 # Submodule: test programs, goldens, simulation/board flows (riscv-tools)
 ├── scripts/, kpi_*.json   # KPI reports
 ├── paths.yaml             # every file path the configuration lists (riscv-tools check-paths)
 └── L2IP/                  # Deprecated SoC top (kept as reference; tag archive/l2ip)
 ```
 
-The core moved to [insper-riscv/Core](https://github.com/insper-riscv/Core) with its
+The core, the memories, the peripherals and the platform moved to
+[Core](https://github.com/insper-riscv/Core), [Memory](https://github.com/insper-riscv/Memory),
+[Peripherals](https://github.com/insper-riscv/Peripherals) and
+[TopLevel](https://github.com/insper-riscv/TopLevel), with their
 history; the state before the move is the tag `pre-refactor`.
 
 ---
@@ -163,7 +166,7 @@ gtkwave Tests/tests/python/sim_build/<toplevel>/waves.ghw
 The design targets the **Cyclone V (5CEBA4F23C7)** on the **DE0-CV** board. Open the Quartus project, compile, and program:
 
 ```
-tests/FPGA/core/quartus/core_fpga_test.qpf   ← Quartus project
+TopLevel/platforms/internal-mem/quartus/core_fpga_test.qpf   ← Quartus project
 ```
 
 The top-level (`core_fpga_test.vhd`) instantiates `rv32im_pipeline_core` alongside the boot ROM, FLASH and RAM Quartus IPs and the PLL.

@@ -31,9 +31,9 @@ jobs:
       - name: Generate rv32_test.h
         run: uv run riscv-tools --config tools/riscv_build/config.yaml generate-header
       - name: Check the memory map against every copy
-        # Here Tests sits at RV32IM/Tests, so ../src and ../tests (the core's
-        # VHDL and the Quartus IPs) exist and every check runs.
-        run: uv run riscv-tools --root . check-memory-map --platform platforms/internal-mem.yaml
+        # Here Tests sits at RV32IM/Tests, so ../Core, ../Memory and ../TopLevel
+        # (the core's VHDL, the Quartus IPs, the platform) exist and every check runs.
+        run: uv run riscv-tools --root ../TopLevel check-memory-map --platform platforms/internal-mem/platform.yaml
       - name: Check every referenced path exists
         # paths.yaml lists each file the tree's configuration names (simulation
         # sources, tests.json, the Quartus project). Also the safety net for
