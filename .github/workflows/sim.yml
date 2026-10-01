@@ -45,6 +45,12 @@ jobs:
         run: uv run riscv-tools --config tools/riscv_build/config.yaml sim
       - name: Run per-entity VHDL unit tests
         run: uv run python tests/python/runner.py
+      - name: Each repository's own checks and tests, at the pinned versions
+        # Core, Memory, Peripherals and TopLevel: paths, syntax, profiles, entity
+        # tests, memory map. They sit as siblings, which is what they expect.
+        working-directory: .
+        run: make subrepos
+
       - name: Upload waveforms
         if: failure()
         uses: actions/upload-artifact@v7
