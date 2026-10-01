@@ -6,7 +6,7 @@ Insper / CTI Renato Archer
 Uso:
   # 1. Gerar o JSON da versão base (fazer UMA vez e commitar):
   python3 scripts/kpi_report.py \\
-    --quartus-dir  <repo_base>/tests/FPGA/core/quartus \\
+    --quartus-dir  <repo_base>/TopLevel/platforms/internal-mem/quartus \\
     --cocotb-log   /dev/null \\
     --testbench-dirs <repo_base>/tests \\
     --output       docs/baseline_2025_2.json

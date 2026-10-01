@@ -10,3 +10,6 @@
 [submodule "Peripherals"]
 	path = Peripherals
 	url = https://github.com/insper-riscv/Peripherals.git
+[submodule "TopLevel"]
+	path = TopLevel
+	url = https://github.com/insper-riscv/TopLevel.git
