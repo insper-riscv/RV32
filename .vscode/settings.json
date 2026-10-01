@@ -1,9 +1,0 @@
-{
-  "VsCodeTaskButtons.tasks": [
-    {
-      "label": "$(play) Boot FPGA",
-      "task": "Boot current file (Make)",
-      "tooltip": "Compila e carrega firmware na FPGA"
-    }
-  ]
-}

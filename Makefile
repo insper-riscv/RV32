@@ -1,55 +1,66 @@
-# Make sure /bin/bash is used for the 'find' in clean
+# The parent repository: it pins Core, Memory, Peripherals, TopLevel and Tests, and
+# this Makefile runs them together. Each of them has its own Makefile and uv project;
+# `git submodule update --init --recursive` first.
 SHELL := /bin/bash
 
-.PHONY: test run clean
+SUBREPOS := Core Memory Peripherals TopLevel
+GHDL     := ghdl
+STD      := --std=08
+WDIR     := build/ghdl
 
-# Run all tests (no args). Test code itself lives in the Tests
-# submodule (insper-riscv/RISC-V-Workstation-Tests), not here — run
-# `git submodule update --init --recursive` first if Tests/ is empty.
-test:
-	cd Tests && uv run python tests/python/runner.py
+.PHONY: all sync check subrepos sim paths clean
 
-# Run a single test by name
-# Usage: make run TEST=<test_name>
-run:
-ifndef TEST
-	$(error Usage: make run TEST=<test_name>)
-endif
-	cd Tests && uv run python tests/python/runner.py $(TEST)
+all: paths check subrepos sim
 
-# Remove generated waveforms
-clean:
-	find . -type f \( -name '*.vcd' -o -name '*.ghw' \) -print -delete
-
+sync:
+	@set -e; for s in $(SUBREPOS) Tests; do (cd $$s && uv sync -q); done
 
 # ---------------------------------------------------------------
-# VHDL Syntax Check (GHDL)
+# VHDL syntax check (GHDL), every source of the tree in ONE library: it also catches
+# two repositories defining the same entity (as a stale ROM_simulation once did).
 # Run with:  make check
 # ---------------------------------------------------------------
-GHDL := ghdl
-STD  := --std=08
-WDIR := build/ghdl
+# 1) All .vhd/.vhdl of the repositories that hold VHDL. The Quartus IPs (Memory/ips)
+#    and the PLL need Intel libraries and are left out.
+CHECK_SRCS := $(shell find TopLevel/platforms/internal-mem/rtl Memory/sim Peripherals/common Peripherals/GPIO Peripherals/TIMER Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
 
-# 1) Coleta todos .vhd/.vhdl
-# The core's VHDL lives in the Core submodule, the simulation memories in Memory,
-# the peripherals in Peripherals and the simulation top in TopLevel.
-CHECK_SRCS_ALL := $(shell find TopLevel/platforms/internal-mem/rtl Memory/sim Peripherals/common Peripherals/GPIO Peripherals/TIMER Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
-
-# 2) Nothing to exclude: the Quartus IPs (Memory/ips, which need Intel libraries) and the
-# PLL are not in the list above.
-CHECK_SRCS := $(CHECK_SRCS_ALL)
-
-# 3) Ordena automaticamente por dependencias (topological sort)
+# 2) Dependency order (topological sort, riscv-tools vhdl-sort)
 ORDERED_SRCS := $(shell uv run --project Tests riscv-tools vhdl-sort $(CHECK_SRCS))
 
-.PHONY: print-check check
+.PHONY: print-check
 print-check:
-	@echo "Arquivos que o check vai analisar:"; echo
+	@echo "Files the check analyzes:"; echo
 	@printf '  %s\n' $(ORDERED_SRCS)
 
 check:
-	@echo "🔍 Checking VHDL syntax with GHDL..."
+	@echo "Checking VHDL syntax with GHDL..."
 	@mkdir -p $(WDIR)
 	@rm -rf $(WDIR)/*
 	@$(GHDL) -a $(STD) --work=work --workdir=$(WDIR) $(ORDERED_SRCS)
-	@echo "✅ VHDL syntax check passed"
+	@echo "VHDL syntax check passed"
+
+# ---------------------------------------------------------------
+# Each repository's own checks and tests, at the pinned versions. They find each
+# other as siblings (../Core, ../Memory, ...), which is how the submodules sit.
+# ---------------------------------------------------------------
+subrepos: sync
+	$(MAKE) -C Core paths check profiles test
+	$(MAKE) -C Memory paths check test
+	$(MAKE) -C Peripherals paths check test
+	$(MAKE) -C TopLevel all
+
+# ---------------------------------------------------------------
+# The Tests project's simulation suite (the 89 programs on the core)
+# ---------------------------------------------------------------
+sim: sync
+	cd Tests && uv run riscv-tools --config tools/riscv_build/config.yaml generate-header \
+	  && uv run riscv-tools --config tools/riscv_build/config.yaml compile --emit hex \
+	  && uv run riscv-tools --config tools/riscv_build/config.yaml sim
+
+# Every file path the configuration lists exists (paths.yaml).
+paths: sync
+	cd Tests && uv run riscv-tools --root .. check-paths --manifest paths.yaml
+
+clean:
+	rm -rf build
+	find . -path ./.git -prune -o -type f \( -name '*.vcd' -o -name '*.ghw' \) -print -delete
