@@ -103,7 +103,8 @@ The `multdiv.vhd` module implements all eight M-extension operations (MUL, MULH,
 │                          #   (common/, I/, M/, cores/rv32im_pipeline_core.vhd), its per-entity tests
 ├── Tests/                 # Submodule: test programs, goldens, simulation/board flows (riscv-tools)
 ├── Memory/                # Submodule: simulation models (sim/) and the board's Quartus IPs (ips/)
-├── src/                   # What has not moved yet: GPIO, TIMER, PLL, Blinky, the simulation top
+├── Peripherals/           # Submodule: GPIO and TIMER (UART later), with their entity tests
+├── src/                   # What has not moved yet: PLL, Blinky, the simulation top
 ├── tests/FPGA/core/       # The Quartus project of the board and the PLL simulation model
 ├── scripts/, kpi_*.json   # KPI reports
 ├── paths.yaml             # every file path the configuration lists (riscv-tools check-paths)

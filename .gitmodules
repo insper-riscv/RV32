@@ -7,3 +7,6 @@
 [submodule "Memory"]
 	path = Memory
 	url = https://github.com/insper-riscv/Memory.git
+[submodule "Peripherals"]
+	path = Peripherals
+	url = https://github.com/insper-riscv/Peripherals.git

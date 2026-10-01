@@ -17,4 +17,4 @@ references:
   - {name: board project (core_fpga_test.qsf), file: tests/FPGA/core/quartus/core_fpga_test.qsf, pattern: '-name (?:VHDL_FILE|VERILOG_FILE|QIP_FILE|SDC_FILE) (\S+)'}
 
   # --- Makefile and scripts --------------------------------------------------
-  - {name: Makefile and CI entry points, paths: [src, Core, Memory, Tests/tests/python/runner.py, Tests/platforms/internal-mem.yaml, Tests/tools/riscv_build/config.yaml, scripts/kpi_report.py, scripts/compare_kpis.py]}
+  - {name: Makefile and CI entry points, paths: [src, Core, Memory, Peripherals, Tests/tests/python/runner.py, Tests/platforms/internal-mem.yaml, Tests/tools/riscv_build/config.yaml, scripts/kpi_report.py, scripts/compare_kpis.py]}
