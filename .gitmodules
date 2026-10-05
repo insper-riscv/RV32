@@ -1,6 +1,6 @@
 [submodule "Tests"]
 	path = Tests
-	url = https://github.com/insper-riscv/Testes.git
+	url = https://github.com/insper-riscv/Tests.git
 [submodule "Core"]
 	path = Core
 	url = https://github.com/insper-riscv/Core.git
