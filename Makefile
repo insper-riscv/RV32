@@ -8,7 +8,7 @@ GHDL     := ghdl
 STD      := --std=08
 WDIR     := build/ghdl
 
-.PHONY: all sync check subrepos sim paths clean
+.PHONY: all sync check subrepos sim paths board-build board clean
 
 all: paths check subrepos sim
 
@@ -56,6 +56,22 @@ sim: sync
 	cd Tests && uv run riscv-tools --config tools/riscv_build/config.yaml generate-header \
 	  && uv run riscv-tools --config tools/riscv_build/config.yaml compile --emit hex \
 	  && uv run riscv-tools --config tools/riscv_build/config.yaml sim
+
+# ---------------------------------------------------------------
+# The real board. The programs and their goldens are built in the toolchain image
+# (scripts/toolchain.sh), never with a local GCC; only Quartus and the JTAG cable
+# run on the host. `make board-build` first, then `make board`
+# (BOARD_ARGS='--only add' runs one program).
+# ---------------------------------------------------------------
+BOARD_CFG := tools/riscv_build/config.yaml
+
+board-build:
+	cd Tests && ../scripts/toolchain.sh bash -c 'uv run riscv-tools --config $(BOARD_CFG) generate-header \
+	  && uv run riscv-tools --config $(BOARD_CFG) compile --emit mif'
+
+# riscv-tools' run_log writes the whole run to Tests/logs/real/latest.log and archives the previous one.
+board:
+	cd Tests && uv run riscv-tools --config $(BOARD_CFG) run $(BOARD_ARGS)
 
 # Every file path the configuration lists exists (paths.yaml).
 paths: sync
