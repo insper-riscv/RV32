@@ -22,9 +22,9 @@ jobs:
   ghdl-check:
     name: GHDL syntax check
     runs-on: ubuntu-26.04
-    # insper-riscv/Infra's toolchain image: GHDL and uv on PATH.
+    # the ci-vhdl image of insper-riscv/Infra: GHDL and uv on PATH.
     container:
-      image: ghcr.io/insper-riscv/infra-toolchain:latest
+      image: ghcr.io/insper-riscv/ci-vhdl:latest
 
     steps:
       - name: Checkout

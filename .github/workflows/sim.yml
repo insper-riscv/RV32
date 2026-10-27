@@ -13,10 +13,10 @@ concurrency:
 jobs:
   cocotb-ghdl:
     runs-on: ubuntu-26.04
-    # insper-riscv/Infra's toolchain image: GHDL, the RISC-V GCC with picolibc,
+    # the ci-elf image of insper-riscv/Infra: GHDL, the RISC-V GCC with picolibc,
     # Spike and uv already on PATH.
     container:
-      image: ghcr.io/insper-riscv/infra-toolchain:latest
+      image: ghcr.io/insper-riscv/ci-elf:latest
     defaults:
       run:
         working-directory: Tests
@@ -28,6 +28,8 @@ jobs:
           path: .
       - name: Install Python dependencies
         run: uv sync
+      - name: Run host-side UART harness tests
+        run: uv run python -m unittest discover -s tests/host -v
       - name: Generate rv32_test.h
         run: uv run riscv-tools --config tools/riscv_build/config.yaml generate-header
       - name: Check the memory map against every copy
@@ -42,7 +44,11 @@ jobs:
       - name: Build sim test ROM images
         run: uv run riscv-tools --config tools/riscv_build/config.yaml compile --emit hex
       - name: Run sim tests
-        run: uv run riscv-tools --config tools/riscv_build/config.yaml sim
+        # The generic simulation top has no UART pins; Tests' sim-fpga and
+        # physical harness own uart-echo/uart-tx/uart-errors.
+        run: |
+          uv run riscv-tools --config tools/riscv_build/config.yaml sim \
+            --exclude uart-echo,uart-tx,uart-errors
       - name: Run per-entity VHDL unit tests
         run: uv run python tests/python/runner.py
       - name: Each repository's own checks and tests, at the pinned versions

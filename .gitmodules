@@ -1,15 +1,24 @@
 [submodule "Tests"]
 	path = Tests
-	url = https://github.com/insper-riscv/Tests.git
+	url = git@github.com:insper-riscv/Tests.git
 [submodule "Core"]
 	path = Core
-	url = https://github.com/insper-riscv/Core.git
+	url = git@github.com:insper-riscv/Core.git
 [submodule "Memory"]
 	path = Memory
-	url = https://github.com/insper-riscv/Memory.git
+	url = git@github.com:insper-riscv/Memory.git
 [submodule "Peripherals"]
 	path = Peripherals
-	url = https://github.com/insper-riscv/Peripherals.git
+	url = git@github.com:insper-riscv/Peripherals.git
 [submodule "TopLevel"]
 	path = TopLevel
-	url = https://github.com/insper-riscv/TopLevel.git
+	url = git@github.com:insper-riscv/TopLevel.git
+[submodule "Infra"]
+	path = Infra
+	url = git@github.com:insper-riscv/Infra.git
+[submodule "Certification"]
+	path = Certification
+	url = git@github.com:insper-riscv/Certification.git
+[submodule "Common-Components"]
+	path = Common-Components
+	url = git@github.com:insper-riscv/Common-Components.git

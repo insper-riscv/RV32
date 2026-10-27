@@ -1,4 +1,4 @@
-# The parent repository: it pins Core, Memory, Peripherals, TopLevel and Tests, and
+# The parent repository: it pins Core, Memory, Peripherals, TopLevel, Tests, Infra and Certification, and
 # this Makefile runs them together. Each of them has its own Makefile and uv project;
 # `git submodule update --init --recursive` first.
 SHELL := /bin/bash
@@ -8,7 +8,7 @@ GHDL     := ghdl
 STD      := --std=08
 WDIR     := build/ghdl
 
-.PHONY: all sync check subrepos sim paths clean
+.PHONY: all sync check subrepos sim paths board-build board clean
 
 all: paths check subrepos sim
 
@@ -22,7 +22,7 @@ sync:
 # ---------------------------------------------------------------
 # 1) All .vhd/.vhdl of the repositories that hold VHDL. The Quartus IPs (Memory/ips)
 #    and the PLL need Intel libraries and are left out.
-CHECK_SRCS := $(shell find TopLevel/platforms/internal-mem/rtl Memory/sim Peripherals/common Peripherals/GPIO Peripherals/TIMER Core/common Core/I Core/M Core/cores -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
+CHECK_SRCS := $(shell find TopLevel/platforms/internal-mem/rtl Memory/sim Common-Components/src Peripherals/GPIO Peripherals/TIMER Peripherals/UART Core/common Core/I Core/M Core/Zicsr Core/Zifencei Core/core -type f \( -name '*.vhd' -o -name '*.vhdl' \) | sort)
 
 # 2) Dependency order (topological sort, riscv-tools vhdl-sort)
 ORDERED_SRCS := $(shell uv run --project Tests riscv-tools vhdl-sort $(CHECK_SRCS))
@@ -44,18 +44,38 @@ check:
 # other as siblings (../Core, ../Memory, ...), which is how the submodules sit.
 # ---------------------------------------------------------------
 subrepos: sync
+	$(MAKE) -C Common-Components check
 	$(MAKE) -C Core paths check profiles test
 	$(MAKE) -C Memory paths check test
 	$(MAKE) -C Peripherals paths check test
 	$(MAKE) -C TopLevel all
 
 # ---------------------------------------------------------------
-# The Tests project's simulation suite (the 89 programs on the core)
+# The Tests project's generic simulation suite. The UART programs require the
+# physical/hardware top and run in Tests' dedicated UART and sim-fpga flows.
 # ---------------------------------------------------------------
 sim: sync
-	cd Tests && uv run riscv-tools --config tools/riscv_build/config.yaml generate-header \
+	cd Tests && uv run python -m unittest discover -s tests/host -v \
+	  && uv run riscv-tools --config tools/riscv_build/config.yaml generate-header \
 	  && uv run riscv-tools --config tools/riscv_build/config.yaml compile --emit hex \
-	  && uv run riscv-tools --config tools/riscv_build/config.yaml sim
+	  && uv run riscv-tools --config tools/riscv_build/config.yaml sim \
+	    --exclude uart-echo,uart-tx,uart-errors
+
+# ---------------------------------------------------------------
+# The real board. The programs and their goldens are built in the toolchain image
+# (scripts/toolchain.sh), never with a local GCC; only Quartus and the JTAG cable
+# run on the host. `make board-build` first, then `make board`
+# (BOARD_ARGS='--only add' runs one program).
+# ---------------------------------------------------------------
+BOARD_CFG := tools/riscv_build/config.yaml
+
+board-build:
+	cd Tests && ../scripts/toolchain.sh bash -c 'uv run riscv-tools --config $(BOARD_CFG) generate-header \
+	  && uv run riscv-tools --config $(BOARD_CFG) compile --emit mif'
+
+# riscv-tools' run_log writes the whole run to Tests/logs/real/latest.log and archives the previous one.
+board:
+	cd Tests && uv run riscv-tools --config $(BOARD_CFG) run $(BOARD_ARGS)
 
 # Every file path the configuration lists exists (paths.yaml).
 paths: sync
